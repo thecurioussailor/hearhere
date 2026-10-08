@@ -1,0 +1,11 @@
+/* HearHere highlight styles (injected into pages). */
+.hearhere-preview {
+  outline: 2px dashed rgba(255, 90, 54, 0.75) !important;
+  outline-offset: 3px !important;
+}
+.hearhere-reading {
+  outline: 2px solid #ff5a36 !important;
+  outline-offset: 3px !important;
+  background-color: rgba(255, 90, 54, 0.12) !important;
+  transition: background-color 0.15s ease, outline-color 0.15s ease;
+}

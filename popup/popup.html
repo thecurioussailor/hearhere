@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>HearHere</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="../icons/icon48.png" alt="" width="32" height="32">
+    <div>
+      <h1>HearHere</h1>
+      <p id="status" class="status">Ready</p>
+    </div>
+  </header>
+
+  <section class="transport">
+    <button id="play" class="primary" type="button" title="Play / Pause"></button>
+    <button id="stop" class="ghost" type="button" title="Stop" disabled>
+      <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+    </button>
+    <p id="hint" class="hint">Select text on the page, then press play.</p>
+  </section>
+
+  <section>
+    <div class="label-row"><span class="label">Speed</span><span id="rateLabel" class="value">1×</span></div>
+    <div id="rates" class="rates" role="radiogroup" aria-label="Reading speed"></div>
+  </section>
+
+  <section class="toggle-row">
+    <div>
+      <div class="label">Hover Read</div>
+      <div class="sub">Point at a paragraph to hear it</div>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="hover">
+      <span aria-hidden="true"></span>
+    </label>
+  </section>
+
+  <section>
+    <label class="label" for="voice">Voice</label>
+    <select id="voice"><option value="">System default</option></select>
+  </section>
+
+  <section class="shortcuts">
+    <div class="label">Shortcuts</div>
+    <ul id="shortcuts"></ul>
+    <a href="#" id="editShortcuts">Change shortcuts</a>
+  </section>
+
+  <script src="popup.js"></script>
+</body>
+</html>
