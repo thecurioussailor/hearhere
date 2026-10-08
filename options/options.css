@@ -1,0 +1,67 @@
+:root {
+  --bg: #f6f6f8; --card: #ffffff; --fg: #1b1b1f; --muted: #6b6b75; --line: #e6e6ec; --soft: #f1f1f4;
+  --accent: #ff5a36; --accent-hover: #ff7354; --ok: #16a34a; --err: #dc2626;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #111113; --card: #1a1a1d; --fg: #f4f4f5; --muted: #a1a1aa; --line: #2a2a30; --soft: #232328; --ok: #4ade80; --err: #f87171; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+a { color: var(--accent); }
+code { font-size: 12px; background: var(--soft); padding: 1px 5px; border-radius: 4px; }
+.muted { color: var(--muted); }
+.top { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.top h1 { margin: 0; font-size: 22px; letter-spacing: -.01em; }
+.top p { margin: 2px 0 0; }
+.saved { margin-left: auto; color: var(--ok); font-size: 13px; font-weight: 600; opacity: 0; transition: opacity .2s; white-space: nowrap; }
+.saved.show { opacity: 1; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+.card h2 { margin: 0 0 12px; font-size: 15px; }
+.card > p { margin: -6px 0 14px; }
+.provider { display: none; }
+.provider.active { display: block; }
+
+.engines { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+@media (max-width: 640px) { .engines { grid-template-columns: 1fr; } }
+.engine { position: relative; cursor: pointer; }
+.engine input { position: absolute; opacity: 0; }
+.engine-body { display: block; height: 100%; padding: 14px; border: 1.5px solid var(--line); border-radius: 12px; transition: border-color .15s, background .15s; }
+.engine:hover .engine-body { border-color: var(--muted); }
+.engine input:checked + .engine-body { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.engine input:focus-visible + .engine-body { outline: 2px solid var(--accent); outline-offset: 2px; }
+.engine-name { display: block; font-weight: 700; margin-bottom: 2px; }
+.engine-desc { display: block; color: var(--muted); font-size: 13px; }
+
+.field { display: block; margin-bottom: 14px; }
+.field > span { display: block; font-weight: 600; margin-bottom: 6px; }
+.field small { display: block; margin-top: 5px; font-size: 12px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+@media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+input[type=password], input[type=text], input[type=number], select, textarea {
+  width: 100%; padding: 9px 10px; border-radius: 9px; border: 1px solid var(--line); background: var(--card);
+  color: var(--fg); font: inherit; min-width: 0;
+}
+textarea { resize: vertical; }
+input:focus, select:focus, textarea:focus { outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 0; border-color: var(--accent); }
+.key-row { display: flex; gap: 8px; }
+.key-row > input, .key-row > select { flex: 1; }
+
+.btn { font: inherit; font-weight: 600; border: 0; border-radius: 9px; padding: 9px 14px; cursor: pointer; color: var(--fg); white-space: nowrap; }
+.btn.primary { background: var(--accent); color: #fff; }
+.btn.primary:hover { background: var(--accent-hover); }
+.btn.ghost { background: var(--soft); }
+.btn.ghost:hover { background: var(--line); }
+.btn.icon { width: 40px; padding: 9px 0; }
+.btn:disabled { opacity: .5; cursor: default; }
+.actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.status { font-size: 13px; }
+.status.ok { color: var(--ok); }
+.status.err { color: var(--err); }
+
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 10px; }
+.stats > div { background: var(--soft); border-radius: 10px; padding: 12px; }
+.stat { display: block; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stats .muted { font-size: 12px; }
+.note p { margin: 0; }

@@ -1,20 +1,29 @@
 const RATES = [0.75, 1, 1.25, 1.5, 1.75, 2];
-const DEFAULTS = { rate: 1, voiceName: '', hoverMode: false };
+const DEFAULTS = {
+  rate: 1, voiceName: '', hoverMode: false, provider: 'system',
+  openaiModel: 'gpt-4o-mini-tts', openaiVoice: 'marin', elevenModel: 'eleven_flash_v2_5',
+  elevenVoiceId: '', elevenVoiceName: '', dailyCharLimit: 20000
+};
 const ICON_PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.4-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
 const ICON_PAUSE = '<svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
 
+const ELEVEN_MODEL_NAMES = { eleven_flash_v2_5: 'Flash v2.5', eleven_multilingual_v2: 'Multilingual v2', eleven_v3: 'Eleven v3' };
 const $ = (id) => document.getElementById(id);
 let state = { status: 'idle' };
+let settings = { ...DEFAULTS };
+let keys = { openaiKey: '', elevenKey: '' };
 
-function fmtRate(r) { return `${Number(r)}×`; }
+const fmtRate = (r) => `${Number(r)}×`;
+const fmt = (n) => Number(n || 0).toLocaleString();
 
 function renderState() {
   const s = state.status;
   $('play').innerHTML = s === 'playing' ? ICON_PAUSE : ICON_PLAY;
   $('play').title = s === 'playing' ? 'Pause' : s === 'paused' ? 'Resume' : 'Read selection';
+  $('play').classList.toggle('busy', !!state.buffering && s === 'playing');
   $('stop').disabled = s === 'idle';
   const status = $('status');
-  status.textContent = s === 'playing' ? 'Reading…' : s === 'paused' ? 'Paused' : 'Ready';
+  status.textContent = s === 'playing' ? (state.buffering ? 'Generating audio…' : 'Reading…') : s === 'paused' ? 'Paused' : 'Ready';
   status.classList.toggle('live', s !== 'idle');
 }
 
@@ -27,10 +36,7 @@ function renderRates(current) {
     b.setAttribute('role', 'radio');
     b.setAttribute('aria-checked', String(Math.abs(r - current) < 0.01));
     b.textContent = fmtRate(r);
-    b.addEventListener('click', () => {
-      chrome.storage.sync.set({ rate: r });
-      renderRates(r);
-    });
+    b.addEventListener('click', () => { chrome.storage.sync.set({ rate: r }); renderRates(r); });
     wrap.appendChild(b);
   }
   $('rateLabel').textContent = fmtRate(current);
@@ -40,6 +46,50 @@ function hint(text, warn = false) {
   const h = $('hint');
   h.textContent = text;
   h.classList.toggle('warn', warn);
+}
+
+async function renderVoice() {
+  const p = settings.provider;
+  document.querySelectorAll('#providers button').forEach(b => {
+    b.setAttribute('aria-checked', String(b.dataset.provider === p));
+  });
+  $('systemVoiceWrap').hidden = p !== 'system';
+  $('cloudInfo').hidden = p === 'system';
+  const warn = $('cloudWarn');
+  warn.hidden = true;
+  if (p === 'system') return;
+
+  if (p === 'openai') {
+    $('cloudVoice').textContent = `${cap(settings.openaiVoice)} · ${settings.openaiModel}`;
+    if (!keys.openaiKey) showWarn('Add your OpenAI API key');
+  } else {
+    $('cloudVoice').textContent = `${settings.elevenVoiceName || 'No voice'} · ${ELEVEN_MODEL_NAMES[settings.elevenModel] || settings.elevenModel}`;
+    if (!keys.elevenKey) showWarn('Add your ElevenLabs API key');
+    else if (!settings.elevenVoiceId) showWarn('Pick an ElevenLabs voice');
+  }
+  const { usage } = await chrome.storage.local.get({ usage: null });
+  const day = new Date().toLocaleDateString('en-CA');
+  const used = usage && usage.day === day ? usage.dayChars || 0 : 0;
+  const limit = Number(settings.dailyCharLimit) || 0;
+  $('usage').textContent = limit ? `${fmt(used)} / ${fmt(limit)} today` : `${fmt(used)} chars today`;
+}
+
+function showWarn(text) {
+  const warn = $('cloudWarn');
+  warn.innerHTML = '';
+  const a = document.createElement('a');
+  a.href = '#';
+  a.textContent = `${text} in Voice settings →`;
+  a.addEventListener('click', (e) => { e.preventDefault(); openSettings(); });
+  warn.appendChild(a);
+  warn.hidden = false;
+}
+
+const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : '');
+
+function openSettings() {
+  const hash = settings.provider === 'system' ? '' : `#${settings.provider}`;
+  chrome.tabs.create({ url: chrome.runtime.getURL(`options/options.html${hash}`) });
 }
 
 async function loadVoices(selected) {
@@ -68,7 +118,7 @@ async function loadShortcuts() {
   const list = $('shortcuts');
   const cmds = await chrome.commands.getAll();
   for (const c of cmds) {
-    if (!c.description) continue; // skip _execute_action
+    if (!c.description) continue;
     const li = document.createElement('li');
     const name = document.createElement('span');
     name.textContent = c.description;
@@ -80,10 +130,12 @@ async function loadShortcuts() {
 }
 
 async function init() {
-  const s = await chrome.storage.sync.get(DEFAULTS);
-  renderRates(Number(s.rate) || 1);
-  $('hover').checked = !!s.hoverMode;
-  loadVoices(s.voiceName);
+  settings = await chrome.storage.sync.get(DEFAULTS);
+  keys = await chrome.storage.local.get({ openaiKey: '', elevenKey: '' });
+  renderRates(Number(settings.rate) || 1);
+  $('hover').checked = !!settings.hoverMode;
+  loadVoices(settings.voiceName);
+  renderVoice();
   loadShortcuts();
   const st = await chrome.runtime.sendMessage({ type: 'getState' }).catch(() => null);
   if (st) state = st;
@@ -98,27 +150,31 @@ $('play').addEventListener('click', async () => {
 });
 
 $('stop').addEventListener('click', () => chrome.runtime.sendMessage({ type: 'stop' }));
-
 $('hover').addEventListener('change', (e) => chrome.storage.sync.set({ hoverMode: e.target.checked }));
-
 $('voice').addEventListener('change', (e) => chrome.storage.sync.set({ voiceName: e.target.value }));
-
+document.querySelectorAll('#providers button').forEach(b => {
+  b.addEventListener('click', () => chrome.storage.sync.set({ provider: b.dataset.provider }));
+});
+$('openSettings').addEventListener('click', (e) => { e.preventDefault(); openSettings(); });
 $('editShortcuts').addEventListener('click', (e) => {
   e.preventDefault();
   chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
 });
 
 chrome.runtime.onMessage.addListener((msg) => {
-  if (msg && msg.type === 'hh-state') {
-    state = msg;
-    renderState();
-  }
+  if (msg && msg.type === 'hh-state') { state = msg; renderState(); }
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area !== 'sync') return;
-  if (changes.rate) renderRates(Number(changes.rate.newValue) || 1);
-  if (changes.hoverMode) $('hover').checked = !!changes.hoverMode.newValue;
+  if (area === 'sync') {
+    for (const [k, v] of Object.entries(changes)) settings[k] = v.newValue;
+    if (changes.rate) renderRates(Number(changes.rate.newValue) || 1);
+    if (changes.hoverMode) $('hover').checked = !!changes.hoverMode.newValue;
+  }
+  if (area === 'local') {
+    for (const k of ['openaiKey', 'elevenKey']) if (changes[k]) keys[k] = changes[k].newValue;
+  }
+  renderVoice();
 });
 
 init();

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HearHere settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main>
+    <header class="top">
+      <img src="../icons/icon48.png" alt="" width="40" height="40">
+      <div>
+        <h1>HearHere settings</h1>
+        <p class="muted">Pick a voice engine. Premium voices use your own API key, and you pay the provider directly.</p>
+      </div>
+      <span id="saved" class="saved" aria-live="polite"></span>
+    </header>
+
+    <section class="card">
+      <h2>Voice engine</h2>
+      <div class="engines" role="radiogroup" aria-label="Voice engine">
+        <label class="engine">
+          <input type="radio" name="provider" value="system">
+          <span class="engine-body">
+            <span class="engine-name">System voice</span>
+            <span class="engine-desc">Free, offline, built into your OS. Robotic on most machines.</span>
+          </span>
+        </label>
+        <label class="engine">
+          <input type="radio" name="provider" value="openai">
+          <span class="engine-body">
+            <span class="engine-name">OpenAI</span>
+            <span class="engine-desc">Natural voices, cheap. Can follow a speaking style.</span>
+          </span>
+        </label>
+        <label class="engine">
+          <input type="radio" name="provider" value="elevenlabs">
+          <span class="engine-body">
+            <span class="engine-name">ElevenLabs</span>
+            <span class="engine-desc">Most lifelike, huge voice library, your cloned voices.</span>
+          </span>
+        </label>
+      </div>
+    </section>
+
+    <section class="card provider" data-provider="openai">
+      <h2>OpenAI</h2>
+      <label class="field">
+        <span>API key</span>
+        <div class="key-row">
+          <input id="openaiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-…">
+          <button class="btn ghost" type="button" data-toggle="openaiKey">Show</button>
+        </div>
+        <small class="muted">Get one at <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a>.</small>
+      </label>
+      <div class="grid2">
+        <label class="field"><span>Model</span><select id="openaiModel"></select></label>
+        <label class="field"><span>Voice</span><select id="openaiVoice"></select></label>
+      </div>
+      <label class="field" id="openaiInstructionsWrap">
+        <span>Speaking style <em class="muted">(optional)</em></span>
+        <textarea id="openaiInstructions" rows="2" placeholder="e.g. Warm, calm narrator. Natural pace, clear pronunciation."></textarea>
+      </label>
+      <div class="actions">
+        <button class="btn primary" type="button" id="openaiTest">Play sample</button>
+        <span class="status" id="openaiStatus"></span>
+      </div>
+    </section>
+
+    <section class="card provider" data-provider="elevenlabs">
+      <h2>ElevenLabs</h2>
+      <label class="field">
+        <span>API key</span>
+        <div class="key-row">
+          <input id="elevenKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk_…">
+          <button class="btn ghost" type="button" data-toggle="elevenKey">Show</button>
+        </div>
+        <small class="muted">From <a href="https://elevenlabs.io/app/developers/api-keys" target="_blank" rel="noopener">elevenlabs.io → Developers → API keys</a>. Give it <b>Text to Speech</b> and <b>Voices: read</b> access.</small>
+      </label>
+      <div class="grid2">
+        <label class="field">
+          <span>Voice</span>
+          <div class="key-row">
+            <select id="elevenVoice"><option value="">Add your key to load voices</option></select>
+            <button class="btn ghost icon" type="button" id="elevenPreview" title="Preview voice (free)">▶</button>
+            <button class="btn ghost icon" type="button" id="elevenReload" title="Reload voices">↻</button>
+          </div>
+        </label>
+        <label class="field"><span>Model</span><select id="elevenModel"></select></label>
+      </div>
+      <div class="actions">
+        <button class="btn primary" type="button" id="elevenTest">Play sample</button>
+        <span class="status" id="elevenStatus"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Cost guards</h2>
+      <p class="muted">Only apply to OpenAI and ElevenLabs. The system voice is always free.</p>
+      <div class="grid2">
+        <label class="field">
+          <span>Daily character limit</span>
+          <input id="dailyCharLimit" type="number" min="0" step="1000">
+          <small class="muted">0 = no limit. When reached, HearHere switches to the system voice.</small>
+        </label>
+        <label class="field">
+          <span>Ask before reading more than</span>
+          <input id="confirmOverChars" type="number" min="0" step="500">
+          <small class="muted">characters at once. 0 = never ask.</small>
+        </label>
+        <label class="field">
+          <span>Hover Read: skip blocks longer than</span>
+          <input id="hoverMaxChars" type="number" min="0" step="100">
+          <small class="muted">characters. Select long text instead. 0 = no cap.</small>
+        </label>
+        <label class="field">
+          <span>Hover Read: wait before reading</span>
+          <input id="hoverDwellCloudMs" type="number" min="300" step="100">
+          <small class="muted">milliseconds of resting the cursor (so sweeping the mouse doesn't spend credits).</small>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Usage &amp; cache</h2>
+      <div class="stats">
+        <div><span class="stat" id="usageToday">0</span><span class="muted">characters today</span></div>
+        <div><span class="stat" id="usageMonth">0</span><span class="muted">characters this month</span></div>
+        <div><span class="stat" id="cacheCount">0</span><span class="muted" id="cacheSize">cached clips</span></div>
+      </div>
+      <p class="muted" id="usageBreakdown"></p>
+      <p class="muted">Audio you've already heard is cached on this computer, so replaying it is free. Characters are counted when audio is generated, not when it's replayed.</p>
+      <div class="actions"><button class="btn ghost" type="button" id="cacheClear">Clear audio cache</button></div>
+    </section>
+
+    <section class="card note">
+      <h2>About your keys</h2>
+      <p class="muted">Keys are stored only on this computer (<code>chrome.storage.local</code>, not synced). They are sent only to the provider's own API, from the extension, never to the web pages you visit. They are stored unencrypted, like in any browser extension, so use a key you can revoke, and set a spending limit in your provider's dashboard.</p>
+    </section>
+  </main>
+  <script src="../src/providers.js"></script>
+  <script src="../src/cache.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

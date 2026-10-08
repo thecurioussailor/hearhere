@@ -10,7 +10,12 @@
   }
 
   const RATES = [0.75, 1, 1.25, 1.5, 1.75, 2];
-  const HOVER_DWELL_MS = 450;
+  const HOVER_DWELL_MS = 450;        // system voice
+  const PROVIDER_LABEL = { openai: 'OpenAI', elevenlabs: 'ElevenLabs' };
+  const SETTINGS_DEFAULTS = {
+    rate: 1, hoverMode: false, provider: 'system',
+    confirmOverChars: 3000, hoverMaxChars: 1500, hoverDwellCloudMs: 1000
+  };
   const MAX_CHARS = 20000;
   const BLOCK_TAGS = new Set([
     'P', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'PRE',
@@ -28,6 +33,10 @@
   let status = 'idle';          // idle | playing | paused
   let rate = 1;
   let hoverMode = false;
+  let buffering = false;
+  const settings = { ...SETTINGS_DEFAULTS };
+  let confirmAction = null;
+  let lastSkipToastEl = null;
   let currentReq = null;        // id of the reading this tab asked for
   let reqSeq = 0;
   let readingEl = null;         // block being read (highlighted)
@@ -102,9 +111,25 @@
       .toast {
         position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%);
         padding: 8px 14px; border-radius: 10px; background: #1b1b1f; color: #fff;
-        font-size: 13px; white-space: nowrap; box-shadow: 0 8px 24px rgba(0,0,0,.25);
+        font-size: 13px; max-width: min(520px, calc(100vw - 32px)); text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,.25);
         animation: fade .16s ease-out;
       }
+      .bar button.main.busy { animation: pulse 1s ease-in-out infinite; }
+      .confirm {
+        position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%); width: min(360px, calc(100vw - 32px));
+        padding: 14px; border-radius: 14px; background: #1b1b1f; color: #fff;
+        box-shadow: 0 12px 32px rgba(0,0,0,.32), inset 0 0 0 1px rgba(255,255,255,.08);
+        animation: fade .16s ease-out; font-size: 13px; line-height: 1.45;
+      }
+      .confirm p { margin: 0 0 12px; }
+      .confirm .sub { color: rgba(255,255,255,.6); font-size: 12px; margin-top: -8px; }
+      .confirm .actions { display: flex; justify-content: flex-end; gap: 8px; }
+      .confirm button { height: 30px; padding: 0 14px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+      .confirm .cancel { background: rgba(255,255,255,.1); }
+      .confirm .cancel:hover { background: rgba(255,255,255,.18); }
+      .confirm .ok { background: #ff5a36; }
+      .confirm .ok:hover { background: #ff7354; }
+      @keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(255,90,54,.35); } }
       @keyframes pop { from { transform: scale(.9); opacity: 0; } }
       @keyframes fade { from { opacity: 0; } }
     </style>
@@ -118,6 +143,14 @@
       <button class="step" data-act="faster" type="button" title="Faster">+</button>
     </div>
     <div class="toast" role="status" hidden></div>
+    <div class="confirm" role="dialog" aria-modal="false" hidden>
+      <p class="msg"></p>
+      <p class="sub">This uses your API credits.</p>
+      <div class="actions">
+        <button class="cancel" type="button">Cancel</button>
+        <button class="ok" type="button">Read</button>
+      </div>
+    </div>
   `;
   const readBtn = root.querySelector('.read');
   const bar = root.querySelector('.bar');
@@ -126,6 +159,8 @@
   const fasterBtn = bar.querySelector('[data-act="faster"]');
   const rateLabel = bar.querySelector('.rate');
   const toastEl = root.querySelector('.toast');
+  const confirmEl = root.querySelector('.confirm');
+  const confirmMsg = confirmEl.querySelector('.msg');
   document.documentElement.appendChild(host);
 
   const fmtRate = (r) => `${Number(r).toString()}×`;
@@ -135,6 +170,8 @@
     const paused = status === 'paused';
     toggleBtn.innerHTML = paused ? ICON.play : ICON.pause;
     toggleBtn.title = paused ? 'Resume (Alt+Shift+Space)' : 'Pause (Alt+Shift+Space)';
+    toggleBtn.classList.toggle('busy', buffering && status === 'playing');
+    if (buffering && status === 'playing') toggleBtn.title = 'Generating audio…';
     rateLabel.textContent = fmtRate(rate);
     const idx = rateIndex(rate);
     slowerBtn.disabled = idx <= 0;
@@ -145,7 +182,7 @@
     toastEl.textContent = text;
     toastEl.hidden = false;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { toastEl.hidden = true; }, 2000);
+    toastTimer = setTimeout(() => { toastEl.hidden = true; }, Math.min(6000, 2000 + text.length * 30));
   }
 
   // ---------- highlights ----------
@@ -173,6 +210,35 @@
     send({ type: 'speak', text, reqId: currentReq });
   }
 
+  const isCloud = () => settings.provider === 'openai' || settings.provider === 'elevenlabs';
+
+  function showConfirm(text, onOk) {
+    confirmMsg.textContent = text;
+    confirmAction = onOk;
+    confirmEl.hidden = false;
+    confirmEl.querySelector('.ok').focus({ preventScroll: true });
+  }
+
+  function closeConfirm(run) {
+    const action = confirmAction;
+    confirmAction = null;
+    confirmEl.hidden = true;
+    if (run && action) action();
+  }
+
+  // Explicit reads (button, shortcut). Long reads with a paid voice ask first.
+  function requestRead(text, el) {
+    const clean = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!clean) return;
+    const limit = Number(settings.confirmOverChars) || 0;
+    if (isCloud() && limit > 0 && clean.length > limit) {
+      const n = Math.min(clean.length, MAX_CHARS).toLocaleString();
+      showConfirm(`Read ${n} characters with ${PROVIDER_LABEL[settings.provider]}?`, () => speakText(clean, el));
+      return;
+    }
+    speakText(clean, el);
+  }
+
   function applyState(msg) {
     if (!msg) return;
     // Ignore "finished" notices from a reading we've already replaced.
@@ -184,6 +250,7 @@
       currentReq = msg.reqId || null;
     }
     status = msg.status;
+    buffering = !!msg.buffering;
     if (typeof msg.rate === 'number') rate = msg.rate;
     if (status === 'idle') {
       setReadingEl(null);
@@ -307,11 +374,21 @@
     clearTimeout(dwellTimer);
     setPreviewEl(block && block !== readingEl ? block : null);
     if (!block || block === readingEl) return;
+    const cloud = isCloud();
+    const dwell = cloud ? Math.max(300, Number(settings.hoverDwellCloudMs) || 1000) : HOVER_DWELL_MS;
     dwellTimer = setTimeout(() => {
       if (!hoverMode || lastHoverBlock !== block || !block.isConnected) return;
+      const text = (block.innerText || '').replace(/\s+/g, ' ').trim();
+      const cap = Number(settings.hoverMaxChars) || 0;
+      if (cloud && cap > 0 && text.length > cap) {
+        // Cost guard: don't spend credits on huge blocks just because the cursor passed by.
+        if (lastSkipToastEl !== block) toast('Long block: select it or press Alt+Shift+R to read it');
+        lastSkipToastEl = block;
+        return;
+      }
       setPreviewEl(null);
-      speakText(block.innerText, block);
-    }, HOVER_DWELL_MS);
+      speakText(text, block);
+    }, dwell);
   }
 
   function setHoverMode(value, announce) {
@@ -338,11 +415,11 @@
       const info = getSelectionInfo();
       if (info) {
         hideReadButton();
-        speakText(info.text, null);
+        requestRead(info.text, null);
         return;
       }
       const el = blockUnderCursor();
-      if (el) speakText(el.innerText, el);
+      if (el) requestRead(el.innerText, el);
       else toast('Select some text (or point at a paragraph) first');
     }
   }
@@ -355,8 +432,12 @@
     e.preventDefault();
     const text = pendingSelectionText;
     hideReadButton();
-    speakText(text, null);
+    requestRead(text, null);
   });
+
+  on(confirmEl, 'mousedown', (e) => e.preventDefault());
+  on(confirmEl.querySelector('.ok'), 'click', () => closeConfirm(true));
+  on(confirmEl.querySelector('.cancel'), 'click', () => closeConfirm(false));
 
   on(bar, 'mousedown', (e) => e.preventDefault());
   on(bar, 'click', (e) => {
@@ -397,6 +478,7 @@
   }, { capture: true });
 
   on(document, 'keydown', (e) => {
+    if (e.key === 'Escape' && !confirmEl.hidden) { closeConfirm(false); return; }
     if (e.key === 'Escape' && status !== 'idle') send({ type: 'stop' });
   }, { capture: true });
 
@@ -417,11 +499,15 @@
     if (!alive || !msg || typeof msg !== 'object') return;
     if (msg.type === 'hh-state') applyState(msg);
     else if (msg.type === 'hh-command') runCommand(msg.command);
+    else if (msg.type === 'hh-toast' && msg.text) toast(msg.text);
   }
 
   function onStorage(changes, area) {
     if (!alive || area !== 'sync') return;
     if (changes.rate) { rate = Number(changes.rate.newValue) || 1; renderBar(); }
+    for (const k of ['provider', 'confirmOverChars', 'hoverMaxChars', 'hoverDwellCloudMs']) {
+      if (changes[k]) settings[k] = changes[k].newValue;
+    }
     if (changes.hoverMode) setHoverMode(changes.hoverMode.newValue, true);
   }
 
@@ -448,7 +534,8 @@
 
   chrome.runtime.onMessage.addListener(onMessage);
   chrome.storage.onChanged.addListener(onStorage);
-  chrome.storage.sync.get({ rate: 1, hoverMode: false }).then((s) => {
+  chrome.storage.sync.get(SETTINGS_DEFAULTS).then((s) => {
+    Object.assign(settings, s);
     rate = Number(s.rate) || 1;
     hoverMode = !!s.hoverMode;
     renderBar();

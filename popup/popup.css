@@ -54,13 +54,14 @@ button svg { width: 18px; height: 18px; fill: currentColor; display: block; }
 .value { font-variant-numeric: tabular-nums; font-weight: 600; }
 .sub { color: var(--muted); font-size: 12px; }
 
-.rates { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; background: var(--soft); padding: 3px; border-radius: 9px; }
-.rates button {
+.seg { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; background: var(--soft); padding: 3px; border-radius: 9px; }
+.seg3 { grid-template-columns: repeat(3, 1fr); }
+.seg button {
   background: transparent; padding: 6px 0; border-radius: 7px; font-size: 12px; font-weight: 600;
   font-variant-numeric: tabular-nums; color: var(--muted);
 }
-.rates button:hover { color: var(--fg); }
-.rates button[aria-checked="true"] { background: var(--bg); color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.seg button:hover { color: var(--fg); }
+.seg button[aria-checked="true"] { background: var(--bg); color: var(--fg); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 
 .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .switch { position: relative; width: 38px; height: 22px; flex: none; }
@@ -87,3 +88,14 @@ select {
 }
 .shortcuts a { color: var(--accent); text-decoration: none; font-size: 12px; }
 .shortcuts a:hover { text-decoration: underline; }
+
+.link { color: var(--accent); text-decoration: none; font-size: 12px; font-weight: 600; }
+.link:hover { text-decoration: underline; }
+#systemVoiceWrap select { margin-top: 8px; }
+.cloud-info { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--muted); }
+.cloud-info #cloudVoice { color: var(--fg); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usage { white-space: nowrap; font-variant-numeric: tabular-nums; }
+#cloudWarn { margin: 8px 0 0; }
+#cloudWarn a { color: inherit; font-weight: 600; }
+.primary.busy { animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(255,90,54,.3); } }

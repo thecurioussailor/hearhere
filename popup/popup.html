@@ -24,7 +24,7 @@
 
   <section>
     <div class="label-row"><span class="label">Speed</span><span id="rateLabel" class="value">1×</span></div>
-    <div id="rates" class="rates" role="radiogroup" aria-label="Reading speed"></div>
+    <div id="rates" class="rates seg" role="radiogroup" aria-label="Reading speed"></div>
   </section>
 
   <section class="toggle-row">
@@ -39,8 +39,20 @@
   </section>
 
   <section>
-    <label class="label" for="voice">Voice</label>
-    <select id="voice"><option value="">System default</option></select>
+    <div class="label-row"><span class="label">Voice</span><a href="#" id="openSettings" class="link">Voice settings</a></div>
+    <div id="providers" class="seg seg3" role="radiogroup" aria-label="Voice engine">
+      <button type="button" role="radio" data-provider="system">System</button>
+      <button type="button" role="radio" data-provider="openai">OpenAI</button>
+      <button type="button" role="radio" data-provider="elevenlabs">ElevenLabs</button>
+    </div>
+    <div id="systemVoiceWrap">
+      <select id="voice"><option value="">System default</option></select>
+    </div>
+    <div id="cloudInfo" class="cloud-info" hidden>
+      <span id="cloudVoice"></span>
+      <span id="usage" class="usage"></span>
+    </div>
+    <p id="cloudWarn" class="hint warn" hidden></p>
   </section>
 
   <section class="shortcuts">

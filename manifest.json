@@ -1,11 +1,23 @@
 {
   "manifest_version": 3,
   "name": "HearHere",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Select text or point at a paragraph on any page and hear it read aloud.",
-  "permissions": ["tts", "storage", "contextMenus", "scripting", "activeTab"],
-  "host_permissions": ["<all_urls>"],
-  "background": { "service_worker": "src/background.js" },
+  "permissions": [
+    "tts",
+    "storage",
+    "unlimitedStorage",
+    "contextMenus",
+    "scripting",
+    "activeTab",
+    "offscreen"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
   "action": {
     "default_title": "HearHere",
     "default_popup": "popup/popup.html",
@@ -24,28 +36,46 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["src/content.js"],
-      "css": ["src/content.css"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/content.js"
+      ],
+      "css": [
+        "src/content.css"
+      ],
       "run_at": "document_idle"
     }
   ],
   "commands": {
     "read-selection": {
-      "suggested_key": { "default": "Alt+Shift+R" },
+      "suggested_key": {
+        "default": "Alt+Shift+R"
+      },
       "description": "Read selection (or paragraph under cursor)"
     },
     "toggle-pause": {
-      "suggested_key": { "default": "Alt+Shift+Space" },
+      "suggested_key": {
+        "default": "Alt+Shift+Space"
+      },
       "description": "Pause / resume"
     },
     "stop-reading": {
-      "suggested_key": { "default": "Alt+Shift+S" },
+      "suggested_key": {
+        "default": "Alt+Shift+S"
+      },
       "description": "Stop reading"
     },
     "toggle-hover": {
-      "suggested_key": { "default": "Alt+Shift+H" },
+      "suggested_key": {
+        "default": "Alt+Shift+H"
+      },
       "description": "Toggle Hover Read mode"
     }
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
   }
 }
