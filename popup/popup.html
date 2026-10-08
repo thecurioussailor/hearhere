@@ -3,64 +3,72 @@
 <head>
   <meta charset="utf-8">
   <title>HearHere</title>
+  <link rel="stylesheet" href="../src/theme.css">
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <header>
-    <img src="../icons/icon48.png" alt="" width="32" height="32">
-    <div>
-      <h1>HearHere</h1>
-      <p id="status" class="status">Ready</p>
-    </div>
+  <header class="brand">
+    <i class="logo" data-bloom="6" data-color="var(--coral)" data-center="#fff"></i>
+    <span class="wordmark">HearHere</span>
+    <button id="openSettings" class="icon-btn" type="button" title="Voice settings" aria-label="Voice settings">
+      <svg viewBox="0 0 24 24"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L15 3.5h-4L10.6 6a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1c.5.4 1.1.7 1.7 1l.4 2.5h4l.4-2.5c.6-.3 1.2-.6 1.7-1l2.4 1 2-3.4zM13 15.5A3.5 3.5 0 1 1 13 8.5a3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg>
+    </button>
   </header>
 
   <section class="transport">
-    <button id="play" class="primary" type="button" title="Play / Pause"></button>
-    <button id="stop" class="ghost" type="button" title="Stop" disabled>
-      <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+    <button id="play" class="bloom-btn" type="button" title="Read selection">
+      <i data-bloom="12" data-color="var(--coral)" data-cls="petals-spin"></i>
+      <span id="playIcon" class="glyph"></span>
     </button>
-    <p id="hint" class="hint">Select text on the page, then press play.</p>
+    <div class="now">
+      <p id="status" class="now-title">Ready</p>
+      <p id="hint" class="now-hint">Select text on the page, then press play.</p>
+    </div>
+    <button id="stop" class="stop-btn" type="button" title="Stop" aria-label="Stop" disabled>
+      <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="3"/></svg>
+    </button>
   </section>
 
-  <section>
-    <div class="label-row"><span class="label">Speed</span><span id="rateLabel" class="value">1×</span></div>
-    <div id="rates" class="rates seg" role="radiogroup" aria-label="Reading speed"></div>
+  <section class="block">
+    <div class="row-head"><h2>Speed</h2><span id="rateLabel" class="value">1×</span></div>
+    <div id="rates" class="chips" role="radiogroup" aria-label="Reading speed"></div>
   </section>
 
-  <section class="toggle-row">
+  <section class="block">
+    <div class="row-head"><h2>Voice</h2></div>
+    <div id="providers" class="engines" role="radiogroup" aria-label="Voice engine">
+      <button type="button" role="radio" data-provider="system"><i data-bloom="5" data-color="var(--cobalt)"></i><span>System</span></button>
+      <button type="button" role="radio" data-provider="openai"><i data-bloom="4" data-color="var(--lilac)" data-center="var(--surface)"></i><span>OpenAI</span></button>
+      <button type="button" role="radio" data-provider="elevenlabs"><i data-bloom="8" data-color="var(--blush-mark)"></i><span>ElevenLabs</span></button>
+    </div>
+    <div id="systemVoiceWrap">
+      <select id="voice" aria-label="System voice"><option value="">System default</option></select>
+    </div>
+    <div id="cloudInfo" class="cloud" hidden>
+      <div class="cloud-voice"><b id="cloudVoice"></b><span id="cloudModel" class="muted"></span></div>
+      <div class="meter" aria-hidden="true"><span id="meterFill"></span></div>
+      <p id="usage" class="usage muted"></p>
+    </div>
+    <p id="cloudWarn" class="warn" hidden></p>
+  </section>
+
+  <section class="block toggle-row">
     <div>
-      <div class="label">Hover Read</div>
-      <div class="sub">Point at a paragraph to hear it</div>
+      <h2>Hover Read</h2>
+      <p class="muted sub">Rest your cursor on a paragraph to hear it.</p>
     </div>
     <label class="switch">
-      <input type="checkbox" id="hover">
+      <input type="checkbox" id="hover" aria-label="Hover Read">
       <span aria-hidden="true"></span>
     </label>
   </section>
 
-  <section>
-    <div class="label-row"><span class="label">Voice</span><a href="#" id="openSettings" class="link">Voice settings</a></div>
-    <div id="providers" class="seg seg3" role="radiogroup" aria-label="Voice engine">
-      <button type="button" role="radio" data-provider="system">System</button>
-      <button type="button" role="radio" data-provider="openai">OpenAI</button>
-      <button type="button" role="radio" data-provider="elevenlabs">ElevenLabs</button>
-    </div>
-    <div id="systemVoiceWrap">
-      <select id="voice"><option value="">System default</option></select>
-    </div>
-    <div id="cloudInfo" class="cloud-info" hidden>
-      <span id="cloudVoice"></span>
-      <span id="usage" class="usage"></span>
-    </div>
-    <p id="cloudWarn" class="hint warn" hidden></p>
-  </section>
-
-  <section class="shortcuts">
-    <div class="label">Shortcuts</div>
+  <section class="block shortcuts">
+    <div class="row-head"><h2>Shortcuts</h2><a href="#" id="editShortcuts">Change</a></div>
     <ul id="shortcuts"></ul>
-    <a href="#" id="editShortcuts">Change shortcuts</a>
   </section>
 
+  <script src="../src/bloom.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

@@ -1,11 +1,11 @@
-/* HearHere highlight styles (injected into pages). */
+/* HearHere highlight styles (injected into pages). Lilac outline, blush wash. */
 .hearhere-preview {
-  outline: 2px dashed rgba(255, 90, 54, 0.75) !important;
-  outline-offset: 3px !important;
+  outline: 2px dashed rgba(194, 139, 232, 0.9) !important;
+  outline-offset: 4px !important;
 }
 .hearhere-reading {
-  outline: 2px solid #ff5a36 !important;
-  outline-offset: 3px !important;
-  background-color: rgba(255, 90, 54, 0.12) !important;
-  transition: background-color 0.15s ease, outline-color 0.15s ease;
+  outline: 2px solid #c28be8 !important;
+  outline-offset: 4px !important;
+  background-color: rgba(244, 179, 230, 0.28) !important;
+  transition: background-color 0.2s ease, outline-color 0.2s ease;
 }

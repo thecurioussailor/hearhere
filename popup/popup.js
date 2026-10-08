@@ -18,13 +18,16 @@ const fmt = (n) => Number(n || 0).toLocaleString();
 
 function renderState() {
   const s = state.status;
-  $('play').innerHTML = s === 'playing' ? ICON_PAUSE : ICON_PLAY;
+  $('playIcon').innerHTML = s === 'playing' ? ICON_PAUSE : ICON_PLAY;
   $('play').title = s === 'playing' ? 'Pause' : s === 'paused' ? 'Resume' : 'Read selection';
-  $('play').classList.toggle('busy', !!state.buffering && s === 'playing');
+  const busy = !!state.buffering && s === 'playing';
+  $('play').classList.toggle('busy', busy);
+  $('play').classList.toggle('playing', s === 'playing' && !busy);
   $('stop').disabled = s === 'idle';
   const status = $('status');
-  status.textContent = s === 'playing' ? (state.buffering ? 'Generating audio…' : 'Reading…') : s === 'paused' ? 'Paused' : 'Ready';
-  status.classList.toggle('live', s !== 'idle');
+  status.textContent = s === 'playing' ? (state.buffering ? 'Getting the voice ready' : 'Reading') : s === 'paused' ? 'Paused' : 'Ready';
+  if (s !== 'idle') hint(s === 'paused' ? 'Press play to continue.' : 'Esc on the page stops reading.');
+  else if (!$('hint').classList.contains('warn')) hint('Select text on the page, then press play.');
 }
 
 function renderRates(current) {
@@ -60,10 +63,12 @@ async function renderVoice() {
   if (p === 'system') return;
 
   if (p === 'openai') {
-    $('cloudVoice').textContent = `${cap(settings.openaiVoice)} · ${settings.openaiModel}`;
+    $('cloudVoice').textContent = cap(settings.openaiVoice);
+    $('cloudModel').textContent = settings.openaiModel;
     if (!keys.openaiKey) showWarn('Add your OpenAI API key');
   } else {
-    $('cloudVoice').textContent = `${settings.elevenVoiceName || 'No voice'} · ${ELEVEN_MODEL_NAMES[settings.elevenModel] || settings.elevenModel}`;
+    $('cloudVoice').textContent = settings.elevenVoiceName || 'No voice picked';
+    $('cloudModel').textContent = ELEVEN_MODEL_NAMES[settings.elevenModel] || settings.elevenModel;
     if (!keys.elevenKey) showWarn('Add your ElevenLabs API key');
     else if (!settings.elevenVoiceId) showWarn('Pick an ElevenLabs voice');
   }
@@ -71,7 +76,13 @@ async function renderVoice() {
   const day = new Date().toLocaleDateString('en-CA');
   const used = usage && usage.day === day ? usage.dayChars || 0 : 0;
   const limit = Number(settings.dailyCharLimit) || 0;
-  $('usage').textContent = limit ? `${fmt(used)} / ${fmt(limit)} today` : `${fmt(used)} chars today`;
+  $('usage').textContent = limit
+    ? `${fmt(used)} of ${fmt(limit)} characters used today`
+    : `${fmt(used)} characters used today (no daily limit)`;
+  const pct = limit ? Math.min(100, (used / limit) * 100) : 0;
+  $('meterFill').style.width = `${pct}%`;
+  $('meterFill').parentElement.classList.toggle('full', pct >= 100);
+  $('meterFill').parentElement.hidden = !limit;
 }
 
 function showWarn(text) {
@@ -79,7 +90,7 @@ function showWarn(text) {
   warn.innerHTML = '';
   const a = document.createElement('a');
   a.href = '#';
-  a.textContent = `${text} in Voice settings →`;
+  a.textContent = `${text} in voice settings`;
   a.addEventListener('click', (e) => { e.preventDefault(); openSettings(); });
   warn.appendChild(a);
   warn.hidden = false;
@@ -177,4 +188,5 @@ chrome.storage.onChanged.addListener((changes, area) => {
   renderVoice();
 });
 
+HHBloom.hydrate();
 init();

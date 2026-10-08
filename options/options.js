@@ -18,7 +18,7 @@ let sampleAudio = null;
 let savedTimer = 0;
 function flashSaved() {
   const el = $('saved');
-  el.textContent = 'Saved ✓';
+  el.textContent = 'Saved';
   el.classList.add('show');
   clearTimeout(savedTimer);
   savedTimer = setTimeout(() => el.classList.remove('show'), 1400);
@@ -184,7 +184,7 @@ $('elevenModel').addEventListener('change', (e) => saveSync({ elevenModel: e.tar
 $('elevenReload').addEventListener('click', loadElevenVoices);
 $('elevenPreview').addEventListener('click', () => {
   const v = (local.elevenVoices || []).find(x => x.id === $('elevenVoice').value);
-  if (!v || !v.previewUrl) return setStatus('elevenStatus', 'No free preview for this voice. Use "Play sample".');
+  if (!v || !v.previewUrl) return setStatus('elevenStatus', 'This voice has no free preview. Use Play sample instead.');
   stopSample();
   sampleAudio = new Audio(v.previewUrl);
   sampleAudio.play().catch(() => setStatus('elevenStatus', 'Could not play the preview.', 'err'));
@@ -248,13 +248,17 @@ async function refreshStats() {
   const { usage } = await chrome.storage.local.get({ usage: null });
   const u = normUsage(usage);
   const limit = Number(sync.dailyCharLimit) || 0;
-  $('usageToday').textContent = limit ? `${fmt(u.dayChars)} / ${fmt(limit)}` : fmt(u.dayChars);
+  $('usageToday').textContent = limit ? `${fmt(u.dayChars)} of ${fmt(limit)}` : fmt(u.dayChars);
+  const pct = limit ? Math.min(100, (u.dayChars / limit) * 100) : 0;
+  $('usageMeterFill').style.width = `${pct}%`;
+  $('usageMeter').hidden = !limit;
+  $('usageMeter').classList.toggle('full', pct >= 100);
   $('usageMonth').textContent = fmt(u.monthChars);
   const parts = Object.entries(u.monthByProvider).map(([p, n]) => `${p === 'openai' ? 'OpenAI' : p === 'elevenlabs' ? 'ElevenLabs' : p}: ${fmt(n)}`);
-  $('usageBreakdown').textContent = parts.length ? `This month by provider: ${parts.join(' · ')}` : '';
+  $('usageBreakdown').textContent = parts.length ? `This month by provider: ${parts.join(', ')}.` : '';
   const c = await HHCache.stats();
-  $('cacheCount').textContent = fmt(c.count);
-  $('cacheSize').textContent = `cached clips (${fmtBytes(c.bytes)})`;
+  $('cacheCount').textContent = `${fmt(c.count)} ${c.count === 1 ? 'clip' : 'clips'}`;
+  $('cacheSize').textContent = `Cached audio (${fmtBytes(c.bytes)})`;
 }
 
 $('cacheClear').addEventListener('click', async () => {
@@ -269,6 +273,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 // ---------- init ----------
+HHBloom.hydrate();
 (async () => {
   sync = await chrome.storage.sync.get(DEFAULTS);
   local = await chrome.storage.local.get(LOCAL_DEFAULTS);

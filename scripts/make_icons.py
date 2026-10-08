@@ -1,55 +1,48 @@
-"""Generate HearHere PNG icons with no dependencies: python3 scripts/make_icons.py"""
+"""Generate HearHere bloom icons with no dependencies: python3 scripts/make_icons.py
+
+The mark: a coral six-petal flower with a white centre. Sound blooming out of text.
+Geometry matches src/bloom.js (viewBox 0..100).
+"""
 import math, os, struct, zlib
 
-BG = (255, 90, 54)
-FG = (255, 255, 255)
-SPEAKER = [(0.20, 0.40), (0.33, 0.40), (0.50, 0.25), (0.50, 0.75), (0.33, 0.60), (0.20, 0.60)]
-WAVES = [(0.15, 0.215), (0.27, 0.335)]  # inner/outer radius of each arc
-CENTER = (0.47, 0.50)
+CORAL = (242, 114, 104)
+WHITE = (255, 255, 255)
+PETALS, DIST, PETAL_R, CORE_R, DOT_R = 6, 26, 21, 24, 9
 
-def in_rounded(x, y, r=0.22):
-    cx = min(max(x, r), 1 - r); cy = min(max(y, r), 1 - r)
-    return (x - cx) ** 2 + (y - cy) ** 2 <= r * r and 0 <= x <= 1 and 0 <= y <= 1
+CIRCLES = [(50 + DIST * math.cos(2 * math.pi * i / PETALS - math.pi / 2),
+            50 + DIST * math.sin(2 * math.pi * i / PETALS - math.pi / 2), PETAL_R) for i in range(PETALS)]
+CIRCLES.append((50, 50, CORE_R))
 
-def in_poly(x, y, pts):
-    inside = False
-    j = len(pts) - 1
-    for i in range(len(pts)):
-        xi, yi = pts[i]; xj, yj = pts[j]
-        if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
-            inside = not inside
-        j = i
-    return inside
+def in_flower(x, y):
+    return any((x - cx) ** 2 + (y - cy) ** 2 <= r * r for cx, cy, r in CIRCLES)
 
-def in_wave(x, y):
-    dx, dy = x - CENTER[0], y - CENTER[1]
-    if dx <= 0 or abs(math.atan2(dy, dx)) > math.radians(48):
-        return False
-    d = math.hypot(dx, dy)
-    return any(a <= d <= b for a, b in WAVES)
+def in_dot(x, y, r):
+    return (x - 50) ** 2 + (y - 50) ** 2 <= r * r
 
-def render(size, ss=4):
+def render(size, ss=5):
+    # small sizes: slightly larger dot so it survives at 16px
+    dot = DOT_R * (1.35 if size <= 16 else 1.15 if size <= 32 else 1)
+    scale = 100 / size
     rows = []
     for py in range(size):
         row = bytearray()
         for px in range(size):
-            bg = fg = 0
+            cover = white = 0
             for sy in range(ss):
                 for sx in range(ss):
-                    x = (px + (sx + .5) / ss) / size
-                    y = (py + (sy + .5) / ss) / size
-                    if in_rounded(x, y):
-                        bg += 1
-                        if in_poly(x, y, SPEAKER) or in_wave(x, y):
-                            fg += 1
+                    x = (px + (sx + .5) / ss) * scale
+                    y = (py + (sy + .5) / ss) * scale
+                    if in_flower(x, y):
+                        cover += 1
+                        if in_dot(x, y, dot):
+                            white += 1
             n = ss * ss
-            a = bg / n
-            if bg:
-                t = fg / bg
-                rgb = [round(BG[k] * (1 - t) + FG[k] * t) for k in range(3)]
+            if cover:
+                t = white / cover
+                rgb = [round(CORAL[k] * (1 - t) + WHITE[k] * t) for k in range(3)]
             else:
                 rgb = [0, 0, 0]
-            row += bytes(rgb + [round(a * 255)])
+            row += bytes(rgb + [round(cover / n * 255)])
         rows.append(bytes(row))
     return rows
 

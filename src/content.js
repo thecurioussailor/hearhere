@@ -67,6 +67,18 @@
   }
 
   // ---------- UI (shadow DOM so page CSS can't touch it) ----------
+  function bloomSvg(petals, color, center, cls = '') {
+    const g = { 6: [26, 21, 24], 12: [37, 12.5, 39] }[petals];
+    let out = `<svg class="bloom ${cls}" viewBox="0 0 100 100" aria-hidden="true"><g class="petals" fill="${color}">`;
+    for (let i = 0; i < petals; i++) {
+      const a = (i / petals) * 2 * Math.PI - Math.PI / 2;
+      out += `<circle cx="${(50 + g[0] * Math.cos(a)).toFixed(2)}" cy="${(50 + g[0] * Math.sin(a)).toFixed(2)}" r="${g[1]}"/>`;
+    }
+    out += `<circle cx="50" cy="50" r="${g[2]}"/></g>`;
+    if (center) out += `<circle cx="50" cy="50" r="10" fill="${center}"/>`;
+    return `${out}</svg>`;
+  }
+
   const ICON = {
     speaker: '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M15.5 8.2a5 5 0 0 1 0 7.6l-1.3-1.5a3 3 0 0 0 0-4.6z"/><path d="M17.9 5.4a9 9 0 0 1 0 13.2l-1.3-1.5a7 7 0 0 0 0-10.2z"/></svg>',
     play: '<svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.4-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>',
@@ -85,57 +97,64 @@
       * { box-sizing: border-box; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
       [hidden] { display: none !important; }
       button { all: unset; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: inherit; }
-      button:focus-visible { outline: 2px solid #ff8a6e; outline-offset: 2px; }
+      button:focus-visible { outline: 2px solid #8c9dff; outline-offset: 2px; }
       svg { width: 16px; height: 16px; fill: currentColor; flex: none; }
       .read {
-        position: fixed; height: 30px; padding: 0 12px 0 10px; gap: 6px; border-radius: 999px;
-        background: #1b1b1f; color: #fff; font-size: 13px; font-weight: 600; letter-spacing: .01em;
-        box-shadow: 0 6px 20px rgba(0,0,0,.28), inset 0 0 0 1px rgba(255,255,255,.08);
-        animation: pop .14s ease-out;
-      }
-      .read:hover { background: #ff5a36; }
-      .bar {
-        position: fixed; right: 20px; bottom: 20px; display: flex; align-items: center; gap: 2px;
-        padding: 6px; border-radius: 999px; background: #1b1b1f; color: #fff;
-        box-shadow: 0 10px 30px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.08);
+        position: fixed; height: 32px; padding: 0 14px 0 8px; gap: 7px; border-radius: 999px;
+        background: #24204a; color: #fff8fc; font-size: 13px; font-weight: 600;
+        box-shadow: 0 8px 24px rgba(36,32,74,.28);
         animation: pop .16s ease-out;
       }
+      .read .bloom { width: 20px; height: 20px; transition: transform .3s ease; }
+      .read:hover .bloom { transform: rotate(30deg); }
+      .bar {
+        position: fixed; right: 20px; bottom: 20px; display: flex; align-items: center; gap: 2px;
+        padding: 5px 8px 5px 5px; border-radius: 999px; background: #24204a; color: #fff8fc;
+        box-shadow: 0 12px 32px rgba(36,32,74,.32);
+        animation: pop .18s ease-out;
+      }
       .bar button { width: 34px; height: 34px; border-radius: 999px; }
-      .bar button:hover { background: rgba(255,255,255,.12); }
-      .bar button.main { background: #ff5a36; }
-      .bar button.main:hover { background: #ff7354; }
+      .bar button:hover { background: rgba(255,248,252,.12); }
+      .bar button.main { position: relative; width: 44px; height: 44px; color: #24204a; }
+      .bar button.main:hover { background: none; }
+      .bar button.main .bloom { position: absolute; inset: 0; width: 44px; height: 44px; transform-origin: 50% 50%; transition: transform .2s ease; }
+      .bar button.main:hover .bloom { transform: scale(1.06); }
+      .bar button.main .glyph { position: relative; display: inline-flex; }
+      .bar.playing button.main .bloom { animation: spin 14s linear infinite; }
+      .bar button.main.busy .bloom { animation: breathe 1.1s ease-in-out infinite; }
       .bar button.step { font-size: 18px; font-weight: 500; line-height: 1; }
       .bar button[disabled] { opacity: .35; pointer-events: none; }
       .rate { min-width: 44px; text-align: center; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
-      .sep { width: 1px; height: 18px; background: rgba(255,255,255,.18); margin: 0 4px; }
+      .sep { width: 1px; height: 18px; background: rgba(255,248,252,.2); margin: 0 4px; }
       .toast {
-        position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%);
-        padding: 8px 14px; border-radius: 10px; background: #1b1b1f; color: #fff;
-        font-size: 13px; max-width: min(520px, calc(100vw - 32px)); text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,.25);
-        animation: fade .16s ease-out;
+        position: fixed; left: 50%; bottom: 80px; transform: translateX(-50%);
+        padding: 9px 16px; border-radius: 14px; background: #24204a; color: #fff8fc;
+        font-size: 13px; max-width: min(520px, calc(100vw - 32px)); text-align: center;
+        box-shadow: 0 10px 28px rgba(36,32,74,.28); animation: fade .16s ease-out;
       }
-      .bar button.main.busy { animation: pulse 1s ease-in-out infinite; }
       .confirm {
-        position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%); width: min(360px, calc(100vw - 32px));
-        padding: 14px; border-radius: 14px; background: #1b1b1f; color: #fff;
-        box-shadow: 0 12px 32px rgba(0,0,0,.32), inset 0 0 0 1px rgba(255,255,255,.08);
-        animation: fade .16s ease-out; font-size: 13px; line-height: 1.45;
+        position: fixed; left: 50%; bottom: 80px; transform: translateX(-50%); width: min(360px, calc(100vw - 32px));
+        padding: 16px; border-radius: 20px; background: #24204a; color: #fff8fc;
+        box-shadow: 0 14px 36px rgba(36,32,74,.34); animation: fade .16s ease-out; font-size: 13px; line-height: 1.45;
       }
       .confirm p { margin: 0 0 12px; }
-      .confirm .sub { color: rgba(255,255,255,.6); font-size: 12px; margin-top: -8px; }
+      .confirm .msg { font-size: 14px; font-weight: 600; }
+      .confirm .sub { color: rgba(255,248,252,.65); font-size: 12px; margin-top: -8px; }
       .confirm .actions { display: flex; justify-content: flex-end; gap: 8px; }
-      .confirm button { height: 30px; padding: 0 14px; border-radius: 999px; font-size: 13px; font-weight: 600; }
-      .confirm .cancel { background: rgba(255,255,255,.1); }
-      .confirm .cancel:hover { background: rgba(255,255,255,.18); }
-      .confirm .ok { background: #ff5a36; }
-      .confirm .ok:hover { background: #ff7354; }
-      @keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(255,90,54,.35); } }
+      .confirm button { height: 32px; padding: 0 16px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+      .confirm .cancel { background: rgba(255,248,252,.12); }
+      .confirm .cancel:hover { background: rgba(255,248,252,.2); }
+      .confirm .ok { background: #f27268; color: #24204a; }
+      .confirm .ok:hover { background: #f58a81; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes breathe { 50% { transform: scale(.88) rotate(15deg); } }
       @keyframes pop { from { transform: scale(.9); opacity: 0; } }
       @keyframes fade { from { opacity: 0; } }
+      @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
     </style>
-    <button class="read" type="button" title="Read aloud (Alt+Shift+R)" hidden>${ICON.speaker}<span>Read</span></button>
+    <button class="read" type="button" title="Read aloud (Alt+Shift+R)" hidden>${bloomSvg(6, '#f27268', '#24204a')}<span>Read</span></button>
     <div class="bar" role="toolbar" aria-label="HearHere controls" hidden>
-      <button class="main" data-act="toggle" type="button" title="Pause (Alt+Shift+Space)"></button>
+      <button class="main" data-act="toggle" type="button" title="Pause (Alt+Shift+Space)">${bloomSvg(12, '#f27268')}<span class="glyph"></span></button>
       <button data-act="stop" type="button" title="Stop (Esc)">${ICON.stop}</button>
       <span class="sep"></span>
       <button class="step" data-act="slower" type="button" title="Slower">−</button>
@@ -155,6 +174,7 @@
   const readBtn = root.querySelector('.read');
   const bar = root.querySelector('.bar');
   const toggleBtn = bar.querySelector('[data-act="toggle"]');
+  const toggleGlyph = toggleBtn.querySelector('.glyph');
   const slowerBtn = bar.querySelector('[data-act="slower"]');
   const fasterBtn = bar.querySelector('[data-act="faster"]');
   const rateLabel = bar.querySelector('.rate');
@@ -168,10 +188,11 @@
   function renderBar() {
     bar.hidden = status === 'idle';
     const paused = status === 'paused';
-    toggleBtn.innerHTML = paused ? ICON.play : ICON.pause;
+    toggleGlyph.innerHTML = paused ? ICON.play : ICON.pause;
+    bar.classList.toggle('playing', status === 'playing' && !buffering);
     toggleBtn.title = paused ? 'Resume (Alt+Shift+Space)' : 'Pause (Alt+Shift+Space)';
     toggleBtn.classList.toggle('busy', buffering && status === 'playing');
-    if (buffering && status === 'playing') toggleBtn.title = 'Generating audio…';
+    if (buffering && status === 'playing') toggleBtn.title = 'Getting the voice ready';
     rateLabel.textContent = fmtRate(rate);
     const idx = rateIndex(rate);
     slowerBtn.disabled = idx <= 0;
@@ -310,7 +331,7 @@
     if (!info) return hideReadButton();
     pendingSelectionText = info.text;
     const r = info.rect;
-    const bw = 80, bh = 30, pad = 8;
+    const bw = 84, bh = 32, pad = 8;
     const left = Math.min(Math.max(pad, r.right - bw / 2), window.innerWidth - bw - pad);
     let top = r.bottom + pad;
     if (top + bh > window.innerHeight - pad) top = Math.max(pad, r.top - bh - pad);
@@ -400,7 +421,7 @@
       lastHoverTarget = null;
     }
     if (announce && document.visibilityState === 'visible') {
-      toast(hoverMode ? 'Hover Read on — point at text to hear it' : 'Hover Read off');
+      toast(hoverMode ? 'Hover Read is on. Rest your cursor on text to hear it.' : 'Hover Read is off.');
     }
   }
 

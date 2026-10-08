@@ -4,25 +4,27 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HearHere settings</title>
+  <link rel="stylesheet" href="../src/theme.css">
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
   <main>
     <header class="top">
-      <img src="../icons/icon48.png" alt="" width="40" height="40">
+      <i class="logo" data-bloom="6" data-color="var(--coral)" data-center="#fff"></i>
       <div>
         <h1>HearHere settings</h1>
-        <p class="muted">Pick a voice engine. Premium voices use your own API key, and you pay the provider directly.</p>
+        <p class="lede">Choose the voice that reads to you. Premium voices use your own API key, and you pay the provider directly.</p>
       </div>
       <span id="saved" class="saved" aria-live="polite"></span>
     </header>
 
-    <section class="card">
+    <section class="section">
       <h2>Voice engine</h2>
       <div class="engines" role="radiogroup" aria-label="Voice engine">
         <label class="engine">
           <input type="radio" name="provider" value="system">
           <span class="engine-body">
+            <i class="engine-mark" data-bloom="5" data-color="var(--cobalt)"></i>
             <span class="engine-name">System voice</span>
             <span class="engine-desc">Free, offline, built into your OS. Robotic on most machines.</span>
           </span>
@@ -30,6 +32,7 @@
         <label class="engine">
           <input type="radio" name="provider" value="openai">
           <span class="engine-body">
+            <i class="engine-mark" data-bloom="4" data-color="var(--lilac)" data-center="var(--surface)"></i>
             <span class="engine-name">OpenAI</span>
             <span class="engine-desc">Natural voices, cheap. Can follow a speaking style.</span>
           </span>
@@ -37,6 +40,7 @@
         <label class="engine">
           <input type="radio" name="provider" value="elevenlabs">
           <span class="engine-body">
+            <i class="engine-mark" data-bloom="8" data-color="var(--blush-mark)"></i>
             <span class="engine-name">ElevenLabs</span>
             <span class="engine-desc">Most lifelike, huge voice library, your cloned voices.</span>
           </span>
@@ -44,8 +48,8 @@
       </div>
     </section>
 
-    <section class="card provider" data-provider="openai">
-      <h2>OpenAI</h2>
+    <section class="panel provider" data-provider="openai">
+      <h2>OpenAI voice</h2>
       <label class="field">
         <span>API key</span>
         <div class="key-row">
@@ -68,8 +72,8 @@
       </div>
     </section>
 
-    <section class="card provider" data-provider="elevenlabs">
-      <h2>ElevenLabs</h2>
+    <section class="panel provider" data-provider="elevenlabs">
+      <h2>ElevenLabs voice</h2>
       <label class="field">
         <span>API key</span>
         <div class="key-row">
@@ -83,8 +87,8 @@
           <span>Voice</span>
           <div class="key-row">
             <select id="elevenVoice"><option value="">Add your key to load voices</option></select>
-            <button class="btn ghost icon" type="button" id="elevenPreview" title="Preview voice (free)">▶</button>
-            <button class="btn ghost icon" type="button" id="elevenReload" title="Reload voices">↻</button>
+            <button class="btn ghost icon" type="button" id="elevenPreview" title="Preview this voice (free)" aria-label="Preview this voice"><svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.4-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg></button>
+            <button class="btn ghost icon" type="button" id="elevenReload" title="Reload voices" aria-label="Reload voices"><svg viewBox="0 0 24 24"><path d="M17.7 6.3A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.76-4.24L13 11h7V4z"/></svg></button>
           </div>
         </label>
         <label class="field"><span>Model</span><select id="elevenModel"></select></label>
@@ -95,7 +99,7 @@
       </div>
     </section>
 
-    <section class="card">
+    <section class="section">
       <h2>Cost guards</h2>
       <p class="muted">Only apply to OpenAI and ElevenLabs. The system voice is always free.</p>
       <div class="grid2">
@@ -122,23 +126,25 @@
       </div>
     </section>
 
-    <section class="card">
-      <h2>Usage &amp; cache</h2>
-      <div class="stats">
-        <div><span class="stat" id="usageToday">0</span><span class="muted">characters today</span></div>
-        <div><span class="stat" id="usageMonth">0</span><span class="muted">characters this month</span></div>
-        <div><span class="stat" id="cacheCount">0</span><span class="muted" id="cacheSize">cached clips</span></div>
-      </div>
-      <p class="muted" id="usageBreakdown"></p>
-      <p class="muted">Audio you've already heard is cached on this computer, so replaying it is free. Characters are counted when audio is generated, not when it's replayed.</p>
+    <section class="section">
+      <h2>Usage and cache</h2>
+      <dl class="stats">
+        <div><dt>Today</dt><dd id="usageToday">0</dd></div>
+        <div><dt>This month</dt><dd id="usageMonth">0</dd></div>
+        <div><dt id="cacheSize">Cached audio</dt><dd id="cacheCount">0</dd></div>
+      </dl>
+      <div class="meter" id="usageMeter" aria-hidden="true"><span id="usageMeterFill"></span></div>
+      <p class="muted small" id="usageBreakdown"></p>
+      <p class="muted small">Audio you've already heard is cached on this computer, so replaying it is free. Characters are counted when audio is generated, not when it's replayed.</p>
       <div class="actions"><button class="btn ghost" type="button" id="cacheClear">Clear audio cache</button></div>
     </section>
 
-    <section class="card note">
+    <section class="section note">
       <h2>About your keys</h2>
       <p class="muted">Keys are stored only on this computer (<code>chrome.storage.local</code>, not synced). They are sent only to the provider's own API, from the extension, never to the web pages you visit. They are stored unencrypted, like in any browser extension, so use a key you can revoke, and set a spending limit in your provider's dashboard.</p>
     </section>
   </main>
+  <script src="../src/bloom.js"></script>
   <script src="../src/providers.js"></script>
   <script src="../src/cache.js"></script>
   <script src="options.js"></script>
