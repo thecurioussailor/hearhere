@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "HearHere",
-  "version": "0.2.0",
-  "description": "Select text or point at a paragraph on any page and hear it read aloud.",
+  "version": "1.0.0",
+  "description": "Hear any web page read aloud. Select text or rest your cursor on a paragraph. Free system voices, or your own OpenAI/ElevenLabs key.",
   "permissions": [
     "tts",
     "storage",
